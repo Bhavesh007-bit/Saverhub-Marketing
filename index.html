@@ -159,12 +159,12 @@ padding:20px;
 <img src="logo.png" class="mainlogo shape-circle" id="main-logo">
 </div>
 
-<h1 class="title">Saverhub Marketing</h1>
+<h1 class="title" id="site-title">Saverhub Marketing</h1>
 
-<p class="bio">
-Join Best Free & Fastest All Online <br>
-E-Commerce Deals & Offers Broadcast <br>
-Service & Enjoy Saving ♥️
+<p class="bio" id="site-bio">
+Join Best Free &amp; Fastest All Online <br>
+E-Commerce Deals &amp; Offers Broadcast <br>
+Service &amp; Enjoy Saving ♥️
 </p>
 
 <div id="links-container">
@@ -202,6 +202,14 @@ db.collection('settings').doc('site').get().then(doc => {
     if (s.logoShape) {
       logoEl.classList.remove('shape-circle', 'shape-rounded', 'shape-square');
       logoEl.classList.add('shape-' + s.logoShape);
+    }
+    if (s.siteTitle) document.getElementById('site-title').textContent = s.siteTitle;
+    if (s.siteBio) {
+      // allow line breaks entered as new lines in the admin textarea
+      document.getElementById('site-bio').innerHTML = s.siteBio
+        .split('\n')
+        .map(line => line.replace(/[<>]/g, ''))
+        .join('<br>');
     }
   }
 }).catch(err => console.error('settings load failed', err));
