@@ -86,8 +86,8 @@ img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
     <textarea id="f-desc" rows="2" placeholder="Short description shown under the title"></textarea>
     <label>Link URL</label>
     <input id="f-url" placeholder="https://...">
-    <label>Image URL (icon shown on the card)</label>
-    <input id="f-image" placeholder="https://... or logo.png">
+    <label>Custom Icon URL (optional — link ke domain se auto-detect ho jayega, e.g. Telegram/WhatsApp/Amazon logo)</label>
+    <input id="f-image" placeholder="Leave blank for auto-detected icon">
     <label>Order (smaller number shows first)</label>
     <input id="f-order" type="number" value="1">
     <label><input type="checkbox" id="f-active" checked style="width:auto;display:inline-block;margin-right:6px;"> Active (visible on site)</label>
@@ -123,6 +123,39 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// Auto-detect a brand icon from the link's domain (Telegram, WhatsApp, Amazon, etc.)
+function detectIcon(url) {
+  try {
+    const host = new URL(url).hostname.replace('www.', '').toLowerCase();
+    const map = {
+      't.me': 'telegram', 'telegram.me': 'telegram', 'telegram.org': 'telegram',
+      'wa.me': 'whatsapp', 'whatsapp.com': 'whatsapp', 'chat.whatsapp.com': 'whatsapp',
+      'instagram.com': 'instagram',
+      'facebook.com': 'facebook', 'fb.com': 'facebook', 'fb.me': 'facebook',
+      'youtube.com': 'youtube', 'youtu.be': 'youtube',
+      'twitter.com': 'x', 'x.com': 'x',
+      'amazon.in': 'amazon', 'amazon.com': 'amazon',
+      'flipkart.com': 'flipkart',
+      'myntra.com': 'myntra',
+      'ajio.com': 'ajio',
+      'meesho.com': 'meesho',
+      'shopsy.in': 'shopsy',
+      'snapchat.com': 'snapchat',
+      'pinterest.com': 'pinterest',
+      'linkedin.com': 'linkedin',
+      'discord.com': 'discord', 'discord.gg': 'discord',
+      'paytm.com': 'paytm',
+      'phonepe.com': 'phonepe'
+    };
+    const slug = map[host];
+    if (slug) return `https://cdn.simpleicons.org/${slug}`;
+    // fallback: try to fetch the site's own favicon
+    return `https://www.google.com/s2/favicons?sz=128&domain=${host}`;
+  } catch (e) {
+    return '';
+  }
+}
 
 auth.onAuthStateChanged(user => {
   if (user) {
@@ -170,7 +203,7 @@ function loadDashboard() {
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><img class="thumb" src="${d.image || ''}" onerror="this.style.visibility='hidden'"></td>
+        <td><img class="thumb" src="${d.image || detectIcon(d.url)}" onerror="this.style.visibility='hidden'"></td>
         <td>${d.title || ''}</td>
         <td>${d.order ?? ''}</td>
         <td>${clicks}</td>
