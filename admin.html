@@ -75,6 +75,22 @@ img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
     <div class="stat-card"><div class="num" id="stat-links">–</div><div class="label">Active Links</div></div>
   </div>
 
+  <h2>Site Settings</h2>
+  <div id="settings-box" style="background:#1e293b;padding:18px;border-radius:12px;margin-bottom:20px;">
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Logo Image URL</label>
+    <input id="s-logo-url" placeholder="https://... (link to your logo image)" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Logo Shape</label>
+    <select id="s-logo-shape" style="width:100%;padding:9px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+      <option value="circle">Circle (round)</option>
+      <option value="rounded">Rounded square</option>
+      <option value="square">Square (sharp corners)</option>
+    </select>
+
+    <button onclick="saveSettings()" style="padding:9px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:#22c55e;color:#052e16;">Save Settings</button>
+    <span id="settings-status" style="font-size:12px;color:#94a3b8;margin-left:10px;"></span>
+  </div>
+
   <h2>Links</h2>
   <button class="btn-add" onclick="showForm()">+ Add New Link</button>
 
@@ -162,6 +178,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('login-box').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadDashboard();
+    loadSettings();
   } else {
     document.getElementById('login-box').style.display = 'block';
     document.getElementById('app').style.display = 'none';
@@ -177,6 +194,28 @@ function login() {
 }
 
 function logout() { auth.signOut(); }
+
+function loadSettings() {
+  db.collection('settings').doc('site').get().then(doc => {
+    if (doc.exists) {
+      const s = doc.data();
+      document.getElementById('s-logo-url').value = s.logoUrl || '';
+      document.getElementById('s-logo-shape').value = s.logoShape || 'circle';
+    }
+  });
+}
+
+function saveSettings() {
+  const data = {
+    logoUrl: document.getElementById('s-logo-url').value.trim(),
+    logoShape: document.getElementById('s-logo-shape').value
+  };
+  const statusEl = document.getElementById('settings-status');
+  statusEl.textContent = 'Saving...';
+  db.collection('settings').doc('site').set(data, { merge: true })
+    .then(() => { statusEl.textContent = 'Saved ✓'; setTimeout(() => statusEl.textContent = '', 2000); })
+    .catch(err => { statusEl.textContent = 'Error: ' + err.message; });
+}
 
 function loadDashboard() {
   // visits count
