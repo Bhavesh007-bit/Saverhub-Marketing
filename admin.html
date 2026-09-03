@@ -69,9 +69,34 @@ img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
   <button id="logout" onclick="logout()">Logout</button>
   <h1>Saverhub Marketing Admin Panel</h1>
 
+  <h2>Filter Data</h2>
+  <div id="filter-box" style="background:#1e293b;padding:16px;border-radius:12px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+    <div>
+      <label style="font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;">Range</label>
+      <select id="f-range" onchange="onRangeChange()" style="padding:9px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+        <option value="all">All Time</option>
+        <option value="today">Today</option>
+        <option value="7d">Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+        <option value="custom">Custom Range</option>
+      </select>
+    </div>
+    <div id="custom-range-box" style="display:none;gap:10px;">
+      <div>
+        <label style="font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;">From</label>
+        <input type="date" id="f-from" style="padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;">To</label>
+        <input type="date" id="f-to" style="padding:8px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+      </div>
+    </div>
+    <button onclick="loadDashboard()" style="padding:9px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;background:#3b82f6;color:#fff;">Apply Filter</button>
+  </div>
+
   <div class="stats">
-    <div class="stat-card"><div class="num" id="stat-visits">–</div><div class="label">Total Visits</div></div>
-    <div class="stat-card"><div class="num" id="stat-clicks">–</div><div class="label">Total Link Clicks</div></div>
+    <div class="stat-card"><div class="num" id="stat-visits">–</div><div class="label">Visits (in range)</div></div>
+    <div class="stat-card"><div class="num" id="stat-clicks">–</div><div class="label">Link Clicks (in range)</div></div>
     <div class="stat-card"><div class="num" id="stat-links">–</div><div class="label">Active Links</div></div>
   </div>
 
@@ -217,15 +242,73 @@ function saveSettings() {
     .catch(err => { statusEl.textContent = 'Error: ' + err.message; });
 }
 
+function onRangeChange() {
+  const range = document.getElementById('f-range').value;
+  document.getElementById('custom-range-box').style.display = (range === 'custom') ? 'flex' : 'none';
+}
+
+// Returns {start: Date|null, end: Date|null} based on selected filter
+function getSelectedRange() {
+  const range = document.getElementById('f-range').value;
+  const now = new Date();
+  let start = null, end = null;
+
+  if (range === 'today') {
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    end = new Date(start.getTime() + 24*60*60*1000);
+  } else if (range === '7d') {
+    end = new Date(now.getTime() + 24*60*60*1000);
+    start = new Date(now.getTime() - 7*24*60*60*1000);
+  } else if (range === '30d') {
+    end = new Date(now.getTime() + 24*60*60*1000);
+    start = new Date(now.getTime() - 30*24*60*60*1000);
+  } else if (range === 'custom') {
+    const fromVal = document.getElementById('f-from').value;
+    const toVal = document.getElementById('f-to').value;
+    if (fromVal) start = new Date(fromVal + 'T00:00:00');
+    if (toVal) end = new Date(toVal + 'T23:59:59');
+  }
+  // 'all' -> start=null, end=null (no filtering)
+  return { start, end };
+}
+
 function loadDashboard() {
-  // visits count
-  db.collection('visits').get().then(snap => {
+  const { start, end } = getSelectedRange();
+
+  // ----- Visits (filtered) -----
+  let visitsQuery = db.collection('visits');
+  if (start) visitsQuery = visitsQuery.where('timestamp', '>=', start);
+  if (end) visitsQuery = visitsQuery.where('timestamp', '<=', end);
+  visitsQuery.get().then(snap => {
     document.getElementById('stat-visits').textContent = snap.size;
+  }).catch(err => {
+    document.getElementById('stat-visits').textContent = 'Err';
+    console.error('visits query failed', err);
   });
 
-  // links + clicks
+  // ----- Click events (filtered) -> per-link counts + total -----
+  let clicksQuery = db.collection('click_events');
+  if (start) clicksQuery = clicksQuery.where('timestamp', '>=', start);
+  if (end) clicksQuery = clicksQuery.where('timestamp', '<=', end);
+
+  clicksQuery.get().then(clickSnap => {
+    const clicksByLink = {};
+    let totalClicksInRange = 0;
+    clickSnap.forEach(doc => {
+      const c = doc.data();
+      clicksByLink[c.linkId] = (clicksByLink[c.linkId] || 0) + 1;
+      totalClicksInRange++;
+    });
+    document.getElementById('stat-clicks').textContent = totalClicksInRange;
+    renderLinksTable(clicksByLink);
+  }).catch(err => {
+    console.error('click_events query failed', err);
+    renderLinksTable({});
+  });
+}
+
+function renderLinksTable(clicksByLink) {
   db.collection('links').orderBy('order', 'asc').get().then(snap => {
-    let totalClicks = 0;
     let activeCount = 0;
     const tbody = document.getElementById('links-tbody');
     tbody.innerHTML = '';
@@ -236,8 +319,7 @@ function loadDashboard() {
 
     snap.forEach(doc => {
       const d = doc.data();
-      const clicks = d.clicks || 0;
-      totalClicks += clicks;
+      const clicksInRange = clicksByLink[doc.id] || 0;
       if (d.active) activeCount++;
 
       const tr = document.createElement('tr');
@@ -245,7 +327,7 @@ function loadDashboard() {
         <td><img class="thumb" src="${d.image || detectIcon(d.url)}" onerror="this.style.visibility='hidden'"></td>
         <td>${d.title || ''}</td>
         <td>${d.order ?? ''}</td>
-        <td>${clicks}</td>
+        <td>${clicksInRange}</td>
         <td>${d.active ? '✅ Active' : '⛔ Hidden'}</td>
         <td class="actions">
           <button class="btn-edit" onclick='editLink("${doc.id}")'>Edit</button>
@@ -254,13 +336,9 @@ function loadDashboard() {
         </td>
       `;
       tbody.appendChild(tr);
-
-      // stash data for edit
-      tr.dataset.link = JSON.stringify(d);
       window['__link_' + doc.id] = d;
     });
 
-    document.getElementById('stat-clicks').textContent = totalClicks;
     document.getElementById('stat-links').textContent = activeCount;
   });
 }
