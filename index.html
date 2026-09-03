@@ -285,6 +285,12 @@ db.collection('links')
         }).finally(() => {
           window.location.href = link.url;
         });
+        // log individual click event (for date-range filtering in admin panel)
+        db.collection('click_events').add({
+          linkId: id,
+          linkTitle: link.title,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).catch(err => console.error('click log failed', err));
         // safety fallback in case Firestore is slow/offline
         setTimeout(() => { window.location.href = link.url; }, 600);
       });
