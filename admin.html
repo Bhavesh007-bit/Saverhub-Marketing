@@ -3,72 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Saverhub Admin</title>
+<title>Saverhub Marketing Admin</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0E2A1F;
-  --paper:#F7F1E1;
-  --ink:#12241A;
-  --accent:#FF5A36;
-  --gold:#F4C11D;
-  --muted:#8a8470;
-  --line:rgba(18,36,26,0.15);
-}
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Space Mono', monospace;}
-body{background:var(--bg);color:var(--paper);min-height:100vh;}
-.wrap{max-width:920px;margin:0 auto;padding:26px 16px 60px;}
-h1{font-family:'Archivo Black', sans-serif;font-size:22px;margin-bottom:4px;color:var(--paper);letter-spacing:0.5px;}
-h2{font-size:13px;margin:26px 0 10px;color:var(--gold);letter-spacing:1px;}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;}
+body{background:#0f172a;color:#e2e8f0;min-height:100vh;}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px;}
+h1{font-size:22px;margin-bottom:16px;color:#fff;}
+h2{font-size:16px;margin:24px 0 10px;color:#93c5fd;}
 
 /* login */
-#login-box{max-width:340px;margin:90px auto;background:var(--paper);color:var(--ink);padding:30px;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,0.4);}
-#login-box h1{color:var(--ink);}
-#login-box input{width:100%;padding:10px;margin-bottom:12px;margin-top:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:'Space Mono',monospace;}
-#login-box button{width:100%;padding:11px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;letter-spacing:0.5px;}
-#login-error{color:#c0392b;font-size:12px;margin-bottom:4px;min-height:16px;}
+#login-box{max-width:340px;margin:80px auto;background:#1e293b;padding:28px;border-radius:14px;}
+#login-box input{width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;}
+#login-box button{width:100%;padding:10px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-weight:700;cursor:pointer;}
+#login-error{color:#f87171;font-size:13px;margin-bottom:10px;min-height:16px;}
 
 /* stat cards */
-.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;margin-top:18px;}
-.stat-card{flex:1;min-width:140px;background:var(--paper);color:var(--ink);padding:16px;border-radius:12px;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
-.stat-card .num{font-family:'Archivo Black',sans-serif;font-size:26px;color:var(--accent);}
-.stat-card .label{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:0.5px;}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.stat-card{flex:1;min-width:140px;background:#1e293b;padding:16px;border-radius:12px;}
+.stat-card .num{font-size:26px;font-weight:800;color:#60a5fa;}
+.stat-card .label{font-size:12px;color:#94a3b8;margin-top:4px;}
 
 /* links table */
-table{width:100%;border-collapse:collapse;background:var(--paper);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
-th,td{padding:10px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line);}
-th{color:var(--muted);font-weight:700;letter-spacing:0.5px;}
-img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#e9e2cc;}
-.actions button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;margin-right:6px;font-family:'Space Mono',monospace;}
-.btn-edit{background:#2d6a4f;color:#fff;}
-.btn-del{background:#c0392b;color:#fff;}
-.btn-toggle{background:var(--muted);color:#fff;}
+table{width:100%;border-collapse:collapse;background:#1e293b;border-radius:12px;overflow:hidden;}
+th,td{padding:10px;text-align:left;font-size:13px;border-bottom:1px solid #334155;}
+th{color:#94a3b8;font-weight:600;}
+img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
+.actions button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;font-size:12px;margin-right:6px;}
+.btn-edit{background:#3b82f6;color:#fff;}
+.btn-del{background:#ef4444;color:#fff;}
+.btn-toggle{background:#334155;color:#fff;}
 
 /* form */
-#link-form{background:var(--paper);color:var(--ink);padding:18px;border-radius:12px;margin-top:14px;display:none;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
-#link-form input, #link-form textarea{width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-family:'Space Mono',monospace;}
-#link-form label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:0.5px;}
-#link-form button{padding:9px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-right:8px;font-family:'Space Mono',monospace;}
-.btn-save{background:#2d6a4f;color:#fff;}
-.btn-cancel{background:var(--muted);color:#fff;}
-.btn-add{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:6px;letter-spacing:0.5px;}
+#link-form{background:#1e293b;padding:18px;border-radius:12px;margin-top:14px;display:none;}
+#link-form input, #link-form textarea{width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;}
+#link-form label{font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;}
+#link-form button{padding:9px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-right:8px;}
+.btn-save{background:#22c55e;color:#052e16;}
+.btn-cancel{background:#334155;color:#fff;}
+.btn-add{background:#3b82f6;color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:6px;}
 
-#logout{float:right;background:transparent;color:var(--paper);border:1px solid var(--paper);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;}
+#logout{float:right;background:#334155;color:#fff;border:none;padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;}
 #app{display:none;}
-.empty{color:var(--muted);font-size:13px;padding:14px;text-align:center;}
+.empty{color:#94a3b8;font-size:13px;padding:14px;text-align:center;}
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div id="login-box">
-  <h1>SAVERHUB MARKETING</h1>
-  <div style="font-size:11px;color:#6C7568;margin-bottom:6px;">ADMIN LOGIN</div>
+  <h1>Saverhub Marketing Admin</h1>
   <div id="login-error"></div>
   <input type="email" id="email" placeholder="Admin email">
   <input type="password" id="password" placeholder="Password">
@@ -79,8 +67,7 @@ img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#
 <div id="app">
 <div class="wrap">
   <button id="logout" onclick="logout()">Logout</button>
-  <h1>SAVERHUB MARKETING</h1>
-  <div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">ADMIN DASHBOARD</div>
+  <h1>Saverhub Marketing Admin Panel</h1>
 
   <div class="stats">
     <div class="stat-card"><div class="num" id="stat-visits">–</div><div class="label">Total Visits</div></div>
