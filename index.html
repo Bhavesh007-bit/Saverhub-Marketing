@@ -53,10 +53,14 @@ margin-bottom:18px;
 width:190px;
 height:190px;
 object-fit:cover;
-border-radius:50%;
 box-shadow:0 10px 25px rgba(0,0,0,0.25);
 margin-bottom:15px;
+transition:border-radius .3s ease;
 }
+
+.mainlogo.shape-circle{ border-radius:50%; }
+.mainlogo.shape-rounded{ border-radius:24px; }
+.mainlogo.shape-square{ border-radius:4px; }
 
 .title{
 font-size:34px;
@@ -152,7 +156,7 @@ padding:20px;
 <!-- LOGO -->
 
 <div class="profile">
-<img src="logo.png" class="mainlogo">
+<img src="logo.png" class="mainlogo shape-circle" id="main-logo">
 </div>
 
 <h1 class="title">Saverhub Marketing</h1>
@@ -188,6 +192,19 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+// Load site settings (logo image + shape)
+db.collection('settings').doc('site').get().then(doc => {
+  if (doc.exists) {
+    const s = doc.data();
+    const logoEl = document.getElementById('main-logo');
+    if (s.logoUrl) logoEl.src = s.logoUrl;
+    if (s.logoShape) {
+      logoEl.classList.remove('shape-circle', 'shape-rounded', 'shape-square');
+      logoEl.classList.add('shape-' + s.logoShape);
+    }
+  }
+}).catch(err => console.error('settings load failed', err));
 
 // Auto-detect a brand icon from the link's domain (Telegram, WhatsApp, Amazon, etc.)
 function detectIcon(url) {
