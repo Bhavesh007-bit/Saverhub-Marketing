@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saverhub Marketing</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+:root{
+  --bg:#0E2A1F;
+  --bg-deep:#0A2019;
+  --paper:#F7F1E1;
+  --ink:#12241A;
+  --accent:#FF5A36;
+  --gold:#F4C11D;
+  --muted:#6C7568;
+  --muted-paper:#8a8470;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+  background:
+    radial-gradient(circle at 20% 0%, rgba(244,193,29,0.06), transparent 40%),
+    radial-gradient(circle at 80% 100%, rgba(255,90,54,0.08), transparent 45%),
+    var(--bg);
+  min-height:100vh;
+  font-family:'Space Mono', monospace;
+  color:var(--ink);
+  padding:36px 18px 60px;
+}
+
+.wrap{max-width:440px;margin:0 auto;}
+
+/* ---- Header ---- */
+.header{text-align:center;margin-bottom:28px;position:relative;}
+
+.logo{
+  width:88px;height:88px;border-radius:50%;
+  object-fit:cover;margin:0 auto 18px;
+  border:3px solid var(--paper);
+  box-shadow:0 8px 20px rgba(0,0,0,0.35);
+}
+
+.brand-title{
+  font-family:'Archivo Black', sans-serif;
+  font-size:34px;
+  color:var(--paper);
+  line-height:1.05;
+  letter-spacing:0.5px;
+}
+
+.brand-sub{
+  font-family:'Space Mono', monospace;
+  font-size:13px;
+  letter-spacing:4px;
+  color:var(--gold);
+  margin-top:6px;
+}
+
+.stamp{
+  display:inline-block;
+  margin-top:18px;
+  padding:10px 18px;
+  border:2px dashed var(--accent);
+  border-radius:50%/40%;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:2px;
+  transform:rotate(-6deg);
+}
+
+.bio{
+  margin-top:22px;
+  background:var(--paper);
+  color:var(--ink);
+  font-size:12.5px;
+  line-height:1.8;
+  padding:14px 16px;
+  border-radius:10px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.25);
+}
+
+/* ---- Links (coupon ticket) ---- */
+#links-container{margin-top:26px;}
+
+.loading{color:var(--paper);text-align:center;font-size:13px;opacity:0.7;padding:20px;}
+
+.ticket{
+  display:flex;
+  background:var(--paper);
+  border-radius:12px;
+  margin-bottom:16px;
+  text-decoration:none;
+  color:var(--ink);
+  box-shadow:0 8px 18px rgba(0,0,0,0.28);
+  transition:transform .25s ease, box-shadow .25s ease;
+  position:relative;
+}
+
+.ticket:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 24px rgba(0,0,0,0.35);
+}
+
+.ticket .main{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:14px 16px;
+  min-width:0;
+}
+
+.ticket img{
+  width:52px;height:52px;
+  border-radius:8px;
+  object-fit:cover;
+  flex-shrink:0;
+  background:#e9e2cc;
+}
+
+.ticket .text{min-width:0;}
+
+.ticket .t-title{
+  font-family:'Space Mono', monospace;
+  font-weight:700;
+  font-size:15px;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.ticket .t-desc{
+  font-size:11px;
+  color:var(--muted-paper);
+  margin-top:4px;
+  line-height:1.5;
+}
+
+.stub{
+  width:56px;
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-left:2px dashed rgba(18,36,26,0.25);
+  position:relative;
+  color:var(--accent);
+  font-size:18px;
+}
+
+.stub::before, .stub::after{
+  content:"";
+  position:absolute;
+  width:16px;height:16px;
+  background:var(--bg-deep);
+  border-radius:50%;
+  left:-8px;
+}
+.stub::before{top:-8px;}
+.stub::after{bottom:-8px;}
+
+.footer{
+  text-align:center;
+  margin-top:30px;
+  font-size:11px;
+  color:var(--paper);
+  opacity:0.55;
+  letter-spacing:1px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="header">
+    <img src="logo.png" class="logo" onerror="this.style.display='none'">
+    <div class="brand-title">SAVERHUB</div>
+    <div class="brand-sub">MARKETING</div>
+    <div class="stamp">✓ VERIFIED DEALS</div>
+    <div class="bio">
+      Best & fastest deal alerts across Amazon, Flipkart, Myntra &amp; more —
+      one link, every offer, real savings.
+    </div>
+  </div>
+
+  <div id="links-container">
+    <div class="loading">Loading deals…</div>
+  </div>
+
+  <div class="footer">© 2026 SAVERHUB MARKETING</div>
+
+</div>
+
+<script>
+// ===== PASTE YOUR FIREBASE CONFIG HERE (same as admin.html) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCoLclYwHuAH4l6PdD_l1Dr7enwXV78uoI",
+  authDomain: "saverhub-linktree.firebaseapp.com",
+  projectId: "saverhub-linktree",
+  storageBucket: "saverhub-linktree.firebasestorage.app",
+  messagingSenderId: "572192936201",
+  appId: "1:572192936201:web:1a44cc62a74325b65dc3d8",
+  measurementId: "G-LNXRH2BTSE"
+};
+// ===================================================================
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Log a visit (page view)
+db.collection('visits').add({
+  timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+  userAgent: navigator.userAgent,
+  referrer: document.referrer || 'direct'
+}).catch(err => console.error('visit log failed', err));
+
+const container = document.getElementById('links-container');
+
+db.collection('links')
+  .where('active', '==', true)
+  .orderBy('order', 'asc')
+  .get()
+  .then(snapshot => {
+    container.innerHTML = '';
+    if (snapshot.empty) {
+      container.innerHTML = '<div class="loading">No deals live right now.</div>';
+      return;
+    }
+    snapshot.forEach(doc => {
+      const link = doc.data();
+      const id = doc.id;
+
+      const a = document.createElement('a');
+      a.className = 'ticket';
+      a.href = link.url;
+
+      a.innerHTML = `
+        <div class="main">
+          <img src="${link.image || ''}" onerror="this.style.visibility='hidden'">
+          <div class="text">
+            <div class="t-title">${link.title || ''}</div>
+            <div class="t-desc">${link.desc || ''}</div>
+          </div>
+        </div>
+        <div class="stub">→</div>
+      `;
+
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        db.collection('links').doc(id).update({
+          clicks: firebase.firestore.FieldValue.increment(1)
+        }).finally(() => { window.location.href = link.url; });
+        setTimeout(() => { window.location.href = link.url; }, 600);
+      });
+
+      container.appendChild(a);
+    });
+  })
+  .catch(err => {
+    console.error(err);
+    container.innerHTML = '<div class="loading">Could not load deals. Please refresh.</div>';
+  });
+</script>
+
+</body>
+</html>

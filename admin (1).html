@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saverhub Admin</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E2A1F;
+  --paper:#F7F1E1;
+  --ink:#12241A;
+  --accent:#FF5A36;
+  --gold:#F4C11D;
+  --muted:#8a8470;
+  --line:rgba(18,36,26,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Space Mono', monospace;}
+body{background:var(--bg);color:var(--paper);min-height:100vh;}
+.wrap{max-width:920px;margin:0 auto;padding:26px 16px 60px;}
+h1{font-family:'Archivo Black', sans-serif;font-size:22px;margin-bottom:4px;color:var(--paper);letter-spacing:0.5px;}
+h2{font-size:13px;margin:26px 0 10px;color:var(--gold);letter-spacing:1px;}
+
+/* login */
+#login-box{max-width:340px;margin:90px auto;background:var(--paper);color:var(--ink);padding:30px;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,0.4);}
+#login-box h1{color:var(--ink);}
+#login-box input{width:100%;padding:10px;margin-bottom:12px;margin-top:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:'Space Mono',monospace;}
+#login-box button{width:100%;padding:11px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;letter-spacing:0.5px;}
+#login-error{color:#c0392b;font-size:12px;margin-bottom:4px;min-height:16px;}
+
+/* stat cards */
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;margin-top:18px;}
+.stat-card{flex:1;min-width:140px;background:var(--paper);color:var(--ink);padding:16px;border-radius:12px;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
+.stat-card .num{font-family:'Archivo Black',sans-serif;font-size:26px;color:var(--accent);}
+.stat-card .label{font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:0.5px;}
+
+/* links table */
+table{width:100%;border-collapse:collapse;background:var(--paper);color:var(--ink);border-radius:12px;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
+th,td{padding:10px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line);}
+th{color:var(--muted);font-weight:700;letter-spacing:0.5px;}
+img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;background:#e9e2cc;}
+.actions button{padding:6px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11.5px;margin-right:6px;font-family:'Space Mono',monospace;}
+.btn-edit{background:#2d6a4f;color:#fff;}
+.btn-del{background:#c0392b;color:#fff;}
+.btn-toggle{background:var(--muted);color:#fff;}
+
+/* form */
+#link-form{background:var(--paper);color:var(--ink);padding:18px;border-radius:12px;margin-top:14px;display:none;box-shadow:0 6px 14px rgba(0,0,0,0.25);}
+#link-form input, #link-form textarea{width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:13px;font-family:'Space Mono',monospace;}
+#link-form label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;letter-spacing:0.5px;}
+#link-form button{padding:9px 16px;border:none;border-radius:8px;font-weight:700;cursor:pointer;margin-right:8px;font-family:'Space Mono',monospace;}
+.btn-save{background:#2d6a4f;color:#fff;}
+.btn-cancel{background:var(--muted);color:#fff;}
+.btn-add{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:700;cursor:pointer;margin-bottom:6px;letter-spacing:0.5px;}
+
+#logout{float:right;background:transparent;color:var(--paper);border:1px solid var(--paper);padding:8px 14px;border-radius:8px;cursor:pointer;font-size:12px;}
+#app{display:none;}
+.empty{color:var(--muted);font-size:13px;padding:14px;text-align:center;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-box">
+  <h1>SAVERHUB MARKETING</h1>
+  <div style="font-size:11px;color:#6C7568;margin-bottom:6px;">ADMIN LOGIN</div>
+  <div id="login-error"></div>
+  <input type="email" id="email" placeholder="Admin email">
+  <input type="password" id="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="wrap">
+  <button id="logout" onclick="logout()">Logout</button>
+  <h1>SAVERHUB MARKETING</h1>
+  <div style="font-size:11px;color:var(--gold);letter-spacing:1px;margin-bottom:8px;">ADMIN DASHBOARD</div>
+
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="stat-visits">–</div><div class="label">Total Visits</div></div>
+    <div class="stat-card"><div class="num" id="stat-clicks">–</div><div class="label">Total Link Clicks</div></div>
+    <div class="stat-card"><div class="num" id="stat-links">–</div><div class="label">Active Links</div></div>
+  </div>
+
+  <h2>Links</h2>
+  <button class="btn-add" onclick="showForm()">+ Add New Link</button>
+
+  <div id="link-form">
+    <input type="hidden" id="edit-id">
+    <label>Title</label>
+    <input id="f-title" placeholder="e.g. SB Loots And Deals">
+    <label>Description</label>
+    <textarea id="f-desc" rows="2" placeholder="Short description shown under the title"></textarea>
+    <label>Link URL</label>
+    <input id="f-url" placeholder="https://...">
+    <label>Image URL (icon shown on the card)</label>
+    <input id="f-image" placeholder="https://... or logo.png">
+    <label>Order (smaller number shows first)</label>
+    <input id="f-order" type="number" value="1">
+    <label><input type="checkbox" id="f-active" checked style="width:auto;display:inline-block;margin-right:6px;"> Active (visible on site)</label>
+    <div>
+      <button class="btn-save" onclick="saveLink()">Save</button>
+      <button class="btn-cancel" onclick="hideForm()">Cancel</button>
+    </div>
+  </div>
+
+  <table id="links-table" style="margin-top:14px;">
+    <thead>
+      <tr><th>Icon</th><th>Title</th><th>Order</th><th>Clicks</th><th>Status</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="links-tbody"></tbody>
+  </table>
+
+</div>
+</div>
+
+<script>
+// ===== PASTE YOUR FIREBASE CONFIG HERE (same as index.html) =====
+const firebaseConfig = {
+  apiKey: "AIzaSyCoLclYwHuAH4l6PdD_l1Dr7enwXV78uoI",
+  authDomain: "saverhub-linktree.firebaseapp.com",
+  projectId: "saverhub-linktree",
+  storageBucket: "saverhub-linktree.firebasestorage.app",
+  messagingSenderId: "572192936201",
+  appId: "1:572192936201:web:1a44cc62a74325b65dc3d8",
+  measurementId: "G-LNXRH2BTSE"
+};
+// ===================================================================
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('login-box').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadDashboard();
+  } else {
+    document.getElementById('login-box').style.display = 'block';
+    document.getElementById('app').style.display = 'none';
+  }
+});
+
+function login() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  document.getElementById('login-error').textContent = '';
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(err => { document.getElementById('login-error').textContent = err.message; });
+}
+
+function logout() { auth.signOut(); }
+
+function loadDashboard() {
+  // visits count
+  db.collection('visits').get().then(snap => {
+    document.getElementById('stat-visits').textContent = snap.size;
+  });
+
+  // links + clicks
+  db.collection('links').orderBy('order', 'asc').get().then(snap => {
+    let totalClicks = 0;
+    let activeCount = 0;
+    const tbody = document.getElementById('links-tbody');
+    tbody.innerHTML = '';
+
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty">No links yet. Click "Add New Link".</td></tr>';
+    }
+
+    snap.forEach(doc => {
+      const d = doc.data();
+      const clicks = d.clicks || 0;
+      totalClicks += clicks;
+      if (d.active) activeCount++;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><img class="thumb" src="${d.image || ''}" onerror="this.style.visibility='hidden'"></td>
+        <td>${d.title || ''}</td>
+        <td>${d.order ?? ''}</td>
+        <td>${clicks}</td>
+        <td>${d.active ? '✅ Active' : '⛔ Hidden'}</td>
+        <td class="actions">
+          <button class="btn-edit" onclick='editLink("${doc.id}")'>Edit</button>
+          <button class="btn-toggle" onclick='toggleLink("${doc.id}", ${!!d.active})'>${d.active ? 'Hide' : 'Show'}</button>
+          <button class="btn-del" onclick='deleteLink("${doc.id}")'>Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+
+      // stash data for edit
+      tr.dataset.link = JSON.stringify(d);
+      window['__link_' + doc.id] = d;
+    });
+
+    document.getElementById('stat-clicks').textContent = totalClicks;
+    document.getElementById('stat-links').textContent = activeCount;
+  });
+}
+
+function showForm() {
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-url').value = '';
+  document.getElementById('f-image').value = '';
+  document.getElementById('f-order').value = 1;
+  document.getElementById('f-active').checked = true;
+  document.getElementById('link-form').style.display = 'block';
+}
+
+function hideForm() {
+  document.getElementById('link-form').style.display = 'none';
+}
+
+function editLink(id) {
+  const d = window['__link_' + id];
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = d.title || '';
+  document.getElementById('f-desc').value = d.desc || '';
+  document.getElementById('f-url').value = d.url || '';
+  document.getElementById('f-image').value = d.image || '';
+  document.getElementById('f-order').value = d.order || 1;
+  document.getElementById('f-active').checked = !!d.active;
+  document.getElementById('link-form').style.display = 'block';
+  window.scrollTo(0, document.getElementById('link-form').offsetTop - 20);
+}
+
+function saveLink() {
+  const id = document.getElementById('edit-id').value;
+  const data = {
+    title: document.getElementById('f-title').value.trim(),
+    desc: document.getElementById('f-desc').value.trim(),
+    url: document.getElementById('f-url').value.trim(),
+    image: document.getElementById('f-image').value.trim(),
+    order: Number(document.getElementById('f-order').value) || 1,
+    active: document.getElementById('f-active').checked
+  };
+  if (!data.title || !data.url) {
+    alert('Title aur Link URL dono zaruri hain.');
+    return;
+  }
+
+  const ref = id ? db.collection('links').doc(id) : db.collection('links').doc();
+  if (!id) data.clicks = 0;
+
+  ref.set(data, { merge: true }).then(() => {
+    hideForm();
+    loadDashboard();
+  }).catch(err => alert('Error: ' + err.message));
+}
+
+function toggleLink(id, current) {
+  db.collection('links').doc(id).update({ active: !current }).then(loadDashboard);
+}
+
+function deleteLink(id) {
+  if (!confirm('Ye link permanently delete ho jayega. Confirm?')) return;
+  db.collection('links').doc(id).delete().then(loadDashboard);
+}
+</script>
+
+</body>
+</html>
