@@ -102,6 +102,12 @@ img.thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;}
 
   <h2>Site Settings</h2>
   <div id="settings-box" style="background:#1e293b;padding:18px;border-radius:12px;margin-bottom:20px;">
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Site Title (shown big under the logo)</label>
+    <input id="s-title" placeholder="e.g. Saverhub Marketing" style="width:100%;padding:9px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
+
+    <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Bio Text (the box under the title — press Enter for a new line)</label>
+    <textarea id="s-bio" rows="3" placeholder="e.g. Best deals on Amazon, Flipkart, Myntra & more" style="width:100%;padding:9px;margin-bottom:12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;font-family:inherit;"></textarea>
+
     <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:4px;">Logo Image URL</label>
     <input id="s-logo-url" placeholder="https://... (link to your logo image)" style="width:100%;padding:9px;margin-bottom:10px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:13px;">
 
@@ -224,6 +230,8 @@ function loadSettings() {
   db.collection('settings').doc('site').get().then(doc => {
     if (doc.exists) {
       const s = doc.data();
+      document.getElementById('s-title').value = s.siteTitle || '';
+      document.getElementById('s-bio').value = s.siteBio || '';
       document.getElementById('s-logo-url').value = s.logoUrl || '';
       document.getElementById('s-logo-shape').value = s.logoShape || 'circle';
     }
@@ -232,6 +240,8 @@ function loadSettings() {
 
 function saveSettings() {
   const data = {
+    siteTitle: document.getElementById('s-title').value.trim(),
+    siteBio: document.getElementById('s-bio').value,
     logoUrl: document.getElementById('s-logo-url').value.trim(),
     logoShape: document.getElementById('s-logo-shape').value
   };
